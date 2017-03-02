@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>chatbot</title>
+    <link rel="stylesheet" type="text/css" href="resources/assets/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div id="restart">RESTART?</div>
+        <div id="chatbot">
+        </div>
+    </div>
+
+    <script type="text/javascript" src="resources/assets/js/bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="resources/assets/js/bower_components/fingerprint/fingerprint.js"></script>
+    <script type="text/javascript" src="resources/assets/js/app.js"></script>
+    
+    <script type="text/javascript">
+ 		setTimeout(function() {
+
+            var restart = document.getElementById("restart");
+            restart.addEventListener("click", function(i) {
+                chatModule.startNew();
+            });
+
+            chatModule.continueLatest();
+        }, 200);
+    </script>
+</body>
+
+</html>

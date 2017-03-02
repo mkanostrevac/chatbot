@@ -1,0 +1,20 @@
+{
+  "name": "chatbot",
+  "version": "0.0.0",
+  "authors": [
+    "Mladen Kanostrevac <mkanostrevac@gmail.com>"
+  ],
+  "description": "chatbot",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.2.2",
+    "fingerprint": "^0.5.4"
+  }
+}
