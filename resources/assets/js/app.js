@@ -200,7 +200,7 @@ var chatModule = (function($, F, consultationBlock) {
             addChatQuestion(element);
             break;
           case "choose":
-            return chooseAnswer(item);
+            return addChatAnswers(item);
           case "write":
             return writeAnswer(item);
           case "consultationCompleted":
@@ -312,6 +312,78 @@ var chatModule = (function($, F, consultationBlock) {
         }
       }, defaultConfig.chatDelay);
     }, typingDelay);
+  }
+
+  function addChatAnswers(chatChooseElement) {
+
+      var buttons = chatChooseElement.answers.map(function(chatChooseElement, index) {
+
+          return createChatAnswerButton(chatChooseElement, {
+            delay: 65 + 65 * index
+          });
+      });
+
+      buttons.forEach(function(button, index) {
+        button.addEventListener("click", function(i) {
+          // button.classList.remove("cui__bubble--response");
+          // button.classList.add("cui__bubble--answered");
+
+          send({
+            text: button.innerHTML
+          }, "answer");
+
+          //OVDE SMO STALI
+          t.animateResponse(button, button.cloneNode(!0), function() {
+            t.say(t.messages[chatChooseElement.answers[index].next]), emit("answer", {
+              item: e.answers[s]
+            })
+          })
+        })
+      })
+
+
+
+    value: function(e) {
+      var t = this,
+        n = e.answers.map(function(e, n) {
+          return t.createAnswerButton(e, {
+            delay: 65 + 65 * n
+          })
+        });
+      n.forEach(function(n, s) {
+        n.addEventListener("click", function(i) {
+          n.classList.remove("cui__bubble--response");
+          n.classList.add("cui__bubble--answered");
+
+          t.send({
+            text: n.innerHTML
+          }, "answer");
+
+          t.animateResponse(n, n.cloneNode(!0), function() {
+            t.say(t.messages[e.answers[s].next]), t.emit("answer", {
+              item: e.answers[s]
+            })
+          })
+        })
+      })
+    }
+  }
+
+  function createChatAnswerButton() {
+    value: function(e, t) {
+      var n = Object.assign({}, {
+          delay: 0,
+          onFinish: function() {}
+        }, t),
+        s = this.createSpeechBubble({
+          text: e.text ? e.text.toUpperCase() : "",
+          type: "response"
+        });
+      return s.style.transform = "translate3d(0, 180px, 0)", this.answers.appendChild(s), setTimeout(function() {
+        s.style.transform = "translate3d(0, 0, 0)"
+      }, 450 + n.delay), s.addEventListener("transitionend", setTimeout(n.onFinish.bind(this, s), 750)), s
+    }
+
   }
 
   function send(chatItemData, chatItemType) {
