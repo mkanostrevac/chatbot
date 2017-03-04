@@ -1,4 +1,204 @@
-.blue {
+body {
+    color: #0194CA;
+    font-size: 12px;
     background-color: black;
-    color: blue;
+    font-family: 'robotoregular', Helvetica, Arial, sans-serif;
+}
+
+p,
+ul {
+    margin-bottom: 1rem;
+}
+
+ul:not(:last-child) {
+    margin-bottom: 20px;
+}
+
+ul, menu, dir {
+    display: block;
+    list-style-type: disc;
+    -webkit-margin-before: 1em;
+    -webkit-margin-after: 1em;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+    -webkit-padding-start: 40px;
+}
+
+.chat-container {
+}
+
+.chat .cui {
+    min-height: calc(100vh - 80px);
+}
+
+.cui {
+    position: relative;
+    padding-top: 2.5em;
+    padding-left: 3em;
+    padding-right: 3em;
+    padding-bottom: 9em;
+    overflow: hidden;
+    width: 100vw;
+    margin: 0 auto;
+    max-width: 700px;
+}
+
+.chat__restart {
+    position: relative;
+    padding-top: 5.8em;
+    padding-right: 4em;
+    overflow: hidden;
+    width: 100vw;
+    margin: 0 auto;
+    max-width: 700px;
+}
+
+.cui,
+.cui * {
+    box-sizing: border-box;
+    outline: none;
+}
+
+.cui__bubble {
+    /*box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);*/
+    transform: translate3d(-96px, 0, 0);
+    transition: transform 0.75s cubic-bezier(0.68, 0.01, 0.245, 1.13) 0.3s, color 0.3s ease-in-out 0.25s, min-width 0.35s ease-in-out, min-height 0.35s ease-in-out;
+    display: inline-block;
+    line-height: 1.45em;
+    border-radius: 3px;
+    margin: 0 0 1em;
+    text-align: left;
+    position: relative;
+    padding: 6px 12px;
+    font-size: 1.1em;
+    line-height: 1.6em;
+    font-family: 'robotolight', Helvetica, Arial, sans-serif;
+    /*border: none;*/
+    max-width: 90%;
+    min-width: 44px;
+    min-height: 12px;
+}
+
+.cui__bubble__recreated {
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    display: inline-block;
+    line-height: 1.45em;
+    border-radius: 3px;
+    margin: 0 0 1em;
+    text-align: left;
+    position: relative;
+    padding: 6px 12px;
+    font-size: 1.1em;
+    line-height: 1.6em;
+    font-family: 'robotolight', Helvetica, Arial, sans-serif;
+    border: none;
+    max-width: 90%;
+    min-width: 44px;
+    min-height: 12px;
+}
+
+.cui__bubble--response {
+    transform: translate3d(0, 0, 0);
+    transition: transform 0.5s cubic-bezier(0.68, 0.01, 0.245, 1.13) 0s;
+    float: right;
+    color: #fbb615;
+    border: 1px solid transparent;
+    border-color: #fbb615;
+}
+
+.cui__bubble--answered {
+    transform: translate3d(0, 0, 0);
+    transition: transform 0.5s cubic-bezier(0.68, 0.01, 0.245, 1.13) 0s;
+    float: right;
+    color: #fbb615;
+}
+
+.cui__bubble--restart {
+    transform: translate3d(0, 0, 0);
+    transition: transform 0.5s cubic-bezier(0.68, 0.01, 0.245, 1.13) 0s;
+    float: right;
+    color: #fbb615;
+    border: 1px solid transparent;
+    border-color: #fbb615;
+    position: relative;
+    cursor: pointer;
+}
+
+.cui__bubble--fade {
+    animation: font-fade 0.6s ease-in-out;
+}
+
+.cui__bubble--slideIn {
+    transform: translate3d(0, 0, 0);
+}
+
+.cui__bubble--typing {
+    color: transparent;
+    max-height: calc(1em + 16px);
+    max-width: 44px;
+    white-space: none;
+}
+
+.cui__bubble--typing:before {
+    content: '...';
+    color: #000;
+}
+
+.cui__bubble--embed {
+    position: relative;
+    padding-bottom: 56.25%;
+    padding-top: 25px;
+    height: 0;
+    width: 100%;
+}
+
+.cui__bubble--embed iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.cui__list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0 0;
+}
+
+.cui__list__item {
+    padding: 0 1em;
+    margin: 0;
+    overflow: hidden;
+}
+
+.cui__responses {
+    position: absolute;
+    text-align: center;
+    padding-bottom: 3em;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+}
+
+.cui__responses .cui__bubble {
+    margin: 6px 6px;
+    cursor: pointer;
+    float: none;
+}
+
+.cui__answers__placeholder:before {
+    content: 'Type and hit RETURN...';
+    display: inline-block;
+    opacity: 0.5;
+}
+
+.cui__textarea {
+    -moz-appearance: textfield-multiline;
+    -webkit-appearance: textarea;
+    height: 75px;
+    overflow: auto;
+    padding: 2px;
+    width: 580px;
 }

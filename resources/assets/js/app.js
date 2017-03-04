@@ -1,4 +1,4 @@
-var consultationBlock = {
+var chatBlocks = {
   'q1': {
     type: 'question',
     text: 'Hello!',
@@ -13,7 +13,6 @@ var consultationBlock = {
     type: 'question',
     text: 'Would you like to hire Vivify Ideas for your next project, or would you like to know us a bit better?',
     next: 'c1'
-    // next: 'q1'
   },
   'c1': {
     type: 'choose',
@@ -126,12 +125,12 @@ var consultationBlock = {
   }
 };
 
-var chatModule = (function($, F, consultationBlock) {
+var chatModule = (function($, F, chatBlocks) {
 
   var defaultConfig,
     currentChat,
-    chatLogDom,
-    chatAnswersDom,
+    chatList,
+    chatAnswers,
     chatHost;
 
   defaultConfig = {
@@ -145,10 +144,10 @@ var chatModule = (function($, F, consultationBlock) {
   };
 
   function initDom() {
-    chatLogDom = document.createElement("ul");
-    // currentConsultationDOM.className = "cui__list";
-    chatAnswersDom = document.createElement("div");
-    // consAnswersDom.className = "cui__responses";
+    chatList = document.createElement("ul");
+    chatList.className = "cui__list";
+    chatAnswers = document.createElement("div");
+    chatAnswers.className = "cui__responses";
     chatHost = document.querySelector(defaultConfig.targetNode);
 
     if (!chatHost) {
@@ -159,245 +158,214 @@ var chatModule = (function($, F, consultationBlock) {
       }
     }
 
-    // this.hostElement.classList.add("cui");
-    chatHost.appendChild(chatLogDom);
-    chatHost.appendChild(chatAnswersDom);
+    chatHost.classList.add("cui");
+    chatHost.appendChild(chatList);
+    chatHost.appendChild(chatAnswers);
   }
 
-  function generateChatAction(startChatItem) {
+  function generateNext(chatBlock) {
 
-    var chatItems = [];
+    var blocks = [];
+    var block = chatBlock;
 
-    if (startChatItem.type === "question") {
-      var chatItem = startChatItem;
-      var type = startChatItem.type;
-      var next = startChatItem.next;
+    var type = chatBlock.type;
+    var next = chatBlock.next;
 
+    if (type === "choose" || type === "write") {
+      blocks.push(block);
+    } else {
       while (type === "question") {
-        chatItems.push(chatItem);
-        type = chatItem.type;
-        next = chatItem.next;
-        chatItem = consultationBlock[next];
-
-        //TODO 
-        // if (chatItems.length > 30) {
-        //   break;
-        // }
+        blocks.push(block);
+        type = block.type;
+        next = block.next;
+        block = chatBlocks[next];
       }
-    } else if (startChatItem.type === "choose" || startChatItem.type === "write") {
-      chatItems.push(startChatItem);
     }
 
     var delay = 100;
-    chatItems.forEach(function(item, n) {
+    blocks.forEach(function(block) {
       setTimeout(function() {
-        switch (item.type) {
+        switch (block.type) {
           case "question":
-            var element = createChatQuestion({
-              text: item.text,
-              next: item.next
+            var element = createQuestionElement({
+              text: block.text,
+              next: block.next
             });
-            addChatQuestion(element);
+            addQuestionElement(element);
             break;
           case "choose":
-            return addChatAnswers(item);
+            return addAnswerButtons(block);
           case "write":
-            return writeAnswer(item);
+            return writeAnswer(block);
           case "consultationCompleted":
             return completeConsultation();
         }
       }, delay);
 
-      if (item.type === "question") {
-        delay += item.text.length * defaultConfig.typingSpeed + defaultConfig.chatDelay;
+      if (block.type === "question") {
+        delay += block.text.length * defaultConfig.typingSpeed + defaultConfig.chatDelay;
       }
     });
   }
 
-  function createChatQuestion(chatItem) {
+  function createQuestionElement(chatBlock) {
 
-    var chatElement = document.createElement("div");
-    // n = "response" === e.type ? "cui__bubble cui__bubble--response" : "cui__bubble";
-    chatElement.innerHTML = chatItem.text;
-    chatElement.next = chatItem.next;
-    // t.setAttribute("class", n);
-    return chatElement;
+    var element = document.createElement("div");
+    element.innerHTML = chatBlock.text;
+    element.next = chatBlock.next;
+    element.setAttribute("class", "cui__bubble");
+    return element;
   }
 
-  function addChatQuestion(chatQuestionElement) {
+  function addQuestionElement(element) {
 
     var container = document.createElement("li");
-    // element.classList.add("cui__list__item");
-    container.appendChild(chatQuestionElement);
-    chatLogDom.appendChild(container);
+    container.classList.add("cui__list__item");
+    container.appendChild(element);
+    chatList.appendChild(container);
 
-    var rect = chatQuestionElement.getBoundingClientRect();
-    // window.getComputedStyle(chatQuestionElement).opacity, chatQuestionElement.classList.add("cui__bubble--slideIn");
-    // if (chatQuestionElement.innerHTML.indexOf("iframe") >= 0) {
-    //   chatQuestionElement.classList.add("cui__bubble--embed");
-    // }
+    var rect = element.getBoundingClientRect();
+    element.classList.add("cui__bubble--slideIn");
 
-    var text = chatQuestionElement.innerHTML;
-    var next = chatQuestionElement.next;
-    chatQuestionElement.innerHTML = defaultConfig.cursor;
-
-    // chatQuestionElement.addEventListener("transitionend", function(rect) {
-    //   "min-width" === rect.propertyName && (chatQuestionElement.removeAttribute("style"), scrollIntoView());
-    // });
+    var text = element.innerHTML;
+    var next = element.next;
+    element.innerHTML = defaultConfig.cursor;
 
     send({
+      type: "question",
       text: text,
       next: next
-    }, "question");
-
+    });
 
     typingSpeed = defaultConfig.typingSpeed;
     typingDelay = text * typingSpeed;
 
     setTimeout(function() {
-      chatQuestionElement.style.minHeight = rect.height + "px";
-      chatQuestionElement.style.minWidth = rect.width + "px";
-      // chatQuestionElement.classList.add("cui__bubble--fade");
+      element.style.minHeight = rect.height + "px";
+      element.style.minWidth = rect.width + "px";
       setTimeout(function() {
-
-        function typeText(e) {
-
-          var isInTag = false;
-          var thisChar = e.tickerText.substr(e.c, 1);
-          if (thisChar == '<') {
-            isInTag = true;
-          }
-          if (thisChar == '>') {
-            isInTag = false;
-          }
-          e.element.innerHTML = e.tickerText.substr(0, e.c++) + defaultConfig.cursor;
-
-          if (e.c < e.tickerText.length + 1) {
-            if (isInTag) {
-              typeText(e);
-            } else {
-              setTimeout(function() {
-                typeText(e);
-              }, defaultConfig.typingSpeed);
-            }
-          } else {
-            e.element.innerHTML = e.tickerText.substr(0, e.tickerText.length);
-            e.c = 1;
-            e.tickerText = "";
-          }
-        }
 
         typeText({
           tickerText: text,
           c: 0,
-          element: chatQuestionElement
+          element: element
         });
-        // chatQuestionElement.removeAttribute("style");
-        // s || t.scrollIntoView();
 
-        var rect = chatHost.getBoundingClientRect();
-        var difference = rect.bottom - window.innerHeight;
-        var scrollNode = document.querySelector(defaultConfig.scrollNode);
+        scrollInto();
 
-        function a() {
-          if (difference > 0) {
-            scrollNode.scrollTop = scrollNode.scrollTop + 8;
-            difference -= 8;
-            window.requestAnimationFrame(a);
-          }
-        }
-
-        if (container) {
-          a();
-        }
       }, defaultConfig.chatDelay);
     }, typingDelay);
   }
 
-  function addChatAnswers(chatChooseElement) {
+  function typeText(e) {
 
-      var buttons = chatChooseElement.answers.map(function(chatChooseElement, index) {
+    var isInTag = false;
+    var thisChar = e.tickerText.substr(e.c, 1);
 
-          return createChatAnswerButton(chatChooseElement, {
-            delay: 65 + 65 * index
-          });
+    if (thisChar == '<') {
+      isInTag = true;
+    }
+
+    if (thisChar == '>') {
+      isInTag = false;
+    }
+
+    e.element.innerHTML = e.tickerText.substr(0, e.c++) + defaultConfig.cursor;
+
+    if (e.c < e.tickerText.length + 1) {
+      if (isInTag) {
+        typeText(e);
+      } else {
+        setTimeout(function() {
+          typeText(e);
+        }, defaultConfig.typingSpeed);
+      }
+    } else {
+      e.element.innerHTML = e.tickerText.substr(0, e.tickerText.length);
+      e.c = 1;
+      e.tickerText = "";
+    }
+  }
+
+  function addAnswerButtons(chatBlock) {
+
+    var buttons = chatBlock.answers.map(function(chatBlock, n) {
+      return createAnswerButton(chatBlock, {
+        delay: 50 + 50 * n
       });
+    });
 
-      buttons.forEach(function(button, index) {
-        button.addEventListener("click", function(i) {
-          // button.classList.remove("cui__bubble--response");
-          // button.classList.add("cui__bubble--answered");
+    buttons.forEach(function(button, index) {
+      button.addEventListener("click", function() {
+        
+        button.classList.remove("cui__bubble--response");
+        button.classList.add("cui__bubble--answered");
 
-          send({
-            text: button.innerHTML
-          }, "answer");
-
-          //OVDE SMO STALI
-          t.animateResponse(button, button.cloneNode(!0), function() {
-            t.say(t.messages[chatChooseElement.answers[index].next]), emit("answer", {
-              item: e.answers[s]
-            })
-          })
-        })
-      })
-
-
-
-    value: function(e) {
-      var t = this,
-        n = e.answers.map(function(e, n) {
-          return t.createAnswerButton(e, {
-            delay: 65 + 65 * n
-          })
+        send({
+          text: button.innerHTML,
+          type: "answer"
         });
-      n.forEach(function(n, s) {
-        n.addEventListener("click", function(i) {
-          n.classList.remove("cui__bubble--response");
-          n.classList.add("cui__bubble--answered");
 
-          t.send({
-            text: n.innerHTML
-          }, "answer");
-
-          t.animateResponse(n, n.cloneNode(!0), function() {
-            t.say(t.messages[e.answers[s].next]), t.emit("answer", {
-              item: e.answers[s]
-            })
-          })
-        })
-      })
-    }
+        var cloneButton = button.cloneNode(true);
+  
+        animateResponse(button, button.cloneNode(true), buttons, function() {
+            var next = chatBlock.answers[index].next;
+            generateNext(chatBlocks[next]);
+        });
+      });
+    });
   }
 
-  function createChatAnswerButton() {
-    value: function(e, t) {
-      var n = Object.assign({}, {
-          delay: 0,
-          onFinish: function() {}
-        }, t),
-        s = this.createSpeechBubble({
-          text: e.text ? e.text.toUpperCase() : "",
-          type: "response"
-        });
-      return s.style.transform = "translate3d(0, 180px, 0)", this.answers.appendChild(s), setTimeout(function() {
-        s.style.transform = "translate3d(0, 0, 0)"
-      }, 450 + n.delay), s.addEventListener("transitionend", setTimeout(n.onFinish.bind(this, s), 750)), s
-    }
+  function animateResponse(button, cloneButton, buttons, callback) {
+    
+    addAnswerElement(cloneButton);
 
+    var a = getAbsoluteRect(cloneButton);
+    var o = getAbsoluteRect(button);
+    var r = a.x - o.x;
+    var c = a.y - o.y;
+
+    button.style.transform = "translate3d(" + r + "px, " + c + "px, 0)";
+    cloneButton.style.opacity = 0;
+
+    button.addEventListener("transitionend", function() {
+      callback();
+      button.parentNode.innerHTML = "";
+      cloneButton.style.opacity = 1;
+    });
+
+    buttons.forEach(function(t) {
+      return t !== button ? t.style.transform = "translate3d(0, 200px, 0)" : void 0;
+    });
   }
 
-  function send(chatItemData, chatItemType) {
+  function addAnswerElement(element) {
+    var container = document.createElement("li");
+    container.classList.add("cui__list__item");
+    container.appendChild(element);
+    chatList.appendChild(container);
+  }
 
-    var chatItem = {
-      type: chatItemType,
-      text: chatItemData.text
-    };
+  function createAnswerButton(chatBlock, t) {
 
-    if (chatItemData.next) {
-      chatItem.next = chatItemData.next;
-    }
+    var s = document.createElement("div");
+    s.innerHTML = chatBlock.text.toUpperCase();
+    s.next = chatBlock.next;
+    s.setAttribute("class", "cui__bubble cui__bubble--response");
 
-    currentChat.log.push(chatItem);
+    s.style.transform = "translate3d(0, 200px, 0)";
+    chatAnswers.appendChild(s);
+
+    setTimeout(function() {
+      s.style.transform = "translate3d(0, 0, 0)";
+    }, 200 + t.delay);
+
+    return s;
+  }
+
+  function send(chatBlock) {
+
+    currentChat.log.push(chatBlock);
 
     ///TODO
     // $.ajax({
@@ -409,6 +377,18 @@ var chatModule = (function($, F, consultationBlock) {
     //     currentChat = data;
     //   }
     // });
+  }
+
+
+
+  function getAbsoluteRect(e) {
+    var t = e.getBoundingClientRect(),
+      n = t.top + window.pageYOffset,
+      s = t.left + window.pageXOffset;
+    return {
+      x: s,
+      y: n
+    };
   }
 
   function scrollInto() {
@@ -459,7 +439,7 @@ var chatModule = (function($, F, consultationBlock) {
         updated_at: "2017-03-02 12:18:08"
       };
 
-      generateChatAction(consultationBlock.q1);
+      generateNext(chatBlocks.q1);
       //
 
       //TODO MOCK
@@ -518,4 +498,4 @@ var chatModule = (function($, F, consultationBlock) {
       // });
     }
   };
-})(jQuery, Fingerprint, consultationBlock);
+})(jQuery, Fingerprint, chatBlocks);
