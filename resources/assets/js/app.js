@@ -117,27 +117,30 @@ var chatBlocks = {
   },
   'byebye2': {
     type: 'question',
-    text: 'Thanks for this! ☕️ Have a great day! 🙌',
+    text: 'Thanks for this! ☕ Have a great day! 🙌',
     next: 'end'
   },
   'end': {
-    type: 'consultationCompleted',
+    type: 'end',
   }
 };
 
 var chatModule = (function($, F, chatBlocks) {
 
   var defaultConfig,
-    currentChat,
     chatList,
     chatAnswers,
-    chatHost;
+    chatHost,
+    hasSeenMaxCharResponse = false;
 
   defaultConfig = {
     targetNode: "div#chatbot",
     scrollNode: "body",
-    maxCharsResponse: 500,
-    maxCharsResponseText: "Let's keep it casual... no need for long messages. :)",
+    maxCharsResponse: 500, //TODO
+    maxCharsResponseText: {
+      type: "warning",
+      text: "Let's keep it casual... no need for long messages. :)"
+    },
     cursor: "<span class=\"blink\">_</span>",
     chatDelay: 1050,
     typingSpeed: 18
@@ -145,9 +148,9 @@ var chatModule = (function($, F, chatBlocks) {
 
   function initDom() {
     chatList = document.createElement("ul");
-    chatList.className = "cui__list";
+    chatList.className = "chat__list";
     chatAnswers = document.createElement("div");
-    chatAnswers.className = "cui__responses";
+    chatAnswers.className = "chat__responses";
     chatHost = document.querySelector(defaultConfig.targetNode);
 
     if (!chatHost) {
@@ -158,9 +161,41 @@ var chatModule = (function($, F, chatBlocks) {
       }
     }
 
-    chatHost.classList.add("cui");
+    chatHost.classList.add("chat");
     chatHost.appendChild(chatList);
     chatHost.appendChild(chatAnswers);
+  }
+
+  function recreateLatestChat(chatLog) {
+
+    var delay = 100;
+    var next;
+    var element;
+
+    chatLog.forEach(function(block) {
+      if (block.next) {
+        next = block.next;
+      }
+      setTimeout(function() {
+        switch (block.type) {
+          case "question":
+            element = createQuestionElement({
+              text: block.text
+            }, true);
+            addQuestionElement(element, true);
+            break;
+          case "answer":
+            element = createAnswerElement({
+              text: block.text
+            });
+            addAnswerElement(element);
+        }
+      }, delay);
+    });
+
+    if (next && next !== "end") {
+      generateNext(chatBlocks[next]);
+    }
   }
 
   function generateNext(chatBlock) {
@@ -171,7 +206,7 @@ var chatModule = (function($, F, chatBlocks) {
     var type = chatBlock.type;
     var next = chatBlock.next;
 
-    if (type === "choose" || type === "write") {
+    if (type === "choose" || type === "write" || type === "warning") {
       blocks.push(block);
     } else {
       while (type === "question") {
@@ -183,22 +218,30 @@ var chatModule = (function($, F, chatBlocks) {
     }
 
     var delay = 100;
+    var element;
+
     blocks.forEach(function(block) {
       setTimeout(function() {
         switch (block.type) {
           case "question":
-            var element = createQuestionElement({
+            element = createQuestionElement({
               text: block.text,
               next: block.next
             });
             addQuestionElement(element);
             break;
+          case "warning":
+            element = createQuestionElement({
+              text: block.text,
+            });
+            addQuestionElement(element);
+            break;
           case "choose":
-            return addAnswerButtons(block);
+            return chooseAnswer(block);
           case "write":
             return writeAnswer(block);
-          case "consultationCompleted":
-            return completeConsultation();
+          case "end":
+            return endChat();
         }
       }, delay);
 
@@ -208,53 +251,68 @@ var chatModule = (function($, F, chatBlocks) {
     });
   }
 
-  function createQuestionElement(chatBlock) {
+  function createQuestionElement(chatBlock, recreatingLatestChat) {
 
     var element = document.createElement("div");
     element.innerHTML = chatBlock.text;
     element.next = chatBlock.next;
-    element.setAttribute("class", "cui__bubble");
+
+    if (recreatingLatestChat) {
+      element.setAttribute("class", "chat__block");
+    } else {
+      element.setAttribute("class", "chat__block chat__question");
+    }
+
     return element;
   }
 
-  function addQuestionElement(element) {
+  function createAnswerElement(chatBlock) {
+
+    var element = document.createElement("div");
+    element.innerHTML = chatBlock.text;
+    element.setAttribute("class", "chat__block chat__answer");
+    return element;
+  }
+
+  function addQuestionElement(element, recreatingLatestChat) {
 
     var container = document.createElement("li");
-    container.classList.add("cui__list__item");
+    container.classList.add("chat__list__item");
     container.appendChild(element);
     chatList.appendChild(container);
 
-    var rect = element.getBoundingClientRect();
-    element.classList.add("cui__bubble--slideIn");
+    scrollIntoView();
 
-    var text = element.innerHTML;
-    var next = element.next;
-    element.innerHTML = defaultConfig.cursor;
+    if (!recreatingLatestChat) {
+      element.classList.add("chat__question--slideIn");
 
-    send({
-      type: "question",
-      text: text,
-      next: next
-    });
+      var text = element.innerHTML;
+      var next = element.next;
+      element.innerHTML = defaultConfig.cursor;
 
-    typingSpeed = defaultConfig.typingSpeed;
-    typingDelay = text * typingSpeed;
+      send({
+        text: text,
+        type: "question",
+        next: next
+      });
 
-    setTimeout(function() {
-      element.style.minHeight = rect.height + "px";
-      element.style.minWidth = rect.width + "px";
+      typingSpeed = defaultConfig.typingSpeed;
+      typingDelay = text * typingSpeed;
+
       setTimeout(function() {
+        setTimeout(function() {
 
-        typeText({
-          tickerText: text,
-          c: 0,
-          element: element
-        });
+          typeText({
+            tickerText: text,
+            c: 0,
+            element: element
+          });
 
-        scrollInto();
+          scrollIntoView();
 
-      }, defaultConfig.chatDelay);
-    }, typingDelay);
+        }, defaultConfig.chatDelay);
+      }, typingDelay);
+    }
   }
 
   function typeText(e) {
@@ -287,112 +345,175 @@ var chatModule = (function($, F, chatBlocks) {
     }
   }
 
-  function addAnswerButtons(chatBlock) {
-
-    var buttons = chatBlock.answers.map(function(chatBlock, n) {
-      return createAnswerButton(chatBlock, {
-        delay: 50 + 50 * n
-      });
-    });
-
-    buttons.forEach(function(button, index) {
-      button.addEventListener("click", function() {
-        
-        button.classList.remove("cui__bubble--response");
-        button.classList.add("cui__bubble--answered");
-
-        send({
-          text: button.innerHTML,
-          type: "answer"
-        });
-
-        var cloneButton = button.cloneNode(true);
-  
-        animateResponse(button, button.cloneNode(true), buttons, function() {
-            var next = chatBlock.answers[index].next;
-            generateNext(chatBlocks[next]);
-        });
-      });
-    });
-  }
-
-  function animateResponse(button, cloneButton, buttons, callback) {
-    
-    addAnswerElement(cloneButton);
-
-    var a = getAbsoluteRect(cloneButton);
-    var o = getAbsoluteRect(button);
-    var r = a.x - o.x;
-    var c = a.y - o.y;
-
-    button.style.transform = "translate3d(" + r + "px, " + c + "px, 0)";
-    cloneButton.style.opacity = 0;
-
-    button.addEventListener("transitionend", function() {
-      callback();
-      button.parentNode.innerHTML = "";
-      cloneButton.style.opacity = 1;
-    });
-
-    buttons.forEach(function(t) {
-      return t !== button ? t.style.transform = "translate3d(0, 200px, 0)" : void 0;
-    });
-  }
-
   function addAnswerElement(element) {
     var container = document.createElement("li");
-    container.classList.add("cui__list__item");
+    container.classList.add("chat__list__item");
     container.appendChild(element);
     chatList.appendChild(container);
   }
 
-  function createAnswerButton(chatBlock, t) {
+  function chooseAnswer(chatBlock) {
 
-    var s = document.createElement("div");
-    s.innerHTML = chatBlock.text.toUpperCase();
-    s.next = chatBlock.next;
-    s.setAttribute("class", "cui__bubble cui__bubble--response");
+    var buttons = chatBlock.answers.map(function(chatBlock, n) {
+      var delay = 50 + 50 * n;
+      return createAnswerButton(chatBlock, delay);
+    });
 
-    s.style.transform = "translate3d(0, 200px, 0)";
-    chatAnswers.appendChild(s);
+    buttons.forEach(function(button, index) {
+      chatAnswers.appendChild(button);
+      button.addEventListener("click", function() {
+
+        button.classList.remove("chat__answer--button");
+        button.classList.add("chat__answer--button--clicked");
+
+        var buttonCopy = button.cloneNode(true);
+        buttonCopy.classList.remove("chat__answer--button--clicked");
+        buttonCopy.classList.add("chat__answer");
+
+        animateResponse(button, buttonCopy, function() {
+          send({
+            text: button.innerHTML,
+            type: "answer"
+          });
+
+          generateNext(chatBlocks[chatBlock.answers[index].next]);
+        });
+      });
+    });
+  }
+
+  function writeAnswer(chatBlock) {
+
+    var textArea = document.createElement("div");
+    textArea.next = chatBlock.next; //TODO
+    textArea.setAttribute("class", "chat__block");
+    textArea.style.transform = "translate3d(0, 200px, 0)";
 
     setTimeout(function() {
-      s.style.transform = "translate3d(0, 0, 0)";
-    }, 200 + t.delay);
+      textArea.style.transform = "translate3d(0, 0, 0)";
+    }, 200);
 
-    return s;
+    chatAnswers.appendChild(textArea);
+
+    textArea.classList.add("chat__textarea");
+    textArea.classList.add("chat__textarea--placeholder");
+    textArea.setAttribute("contentEditable", true);
+
+    textArea.addEventListener("paste", function(e) {
+      requestAnimationFrame(function() {
+        textArea.classList.remove("chat__textarea--placeholder");
+        textArea.innerHTML = textArea.innerText;
+      });
+    });
+
+    textArea.addEventListener("keyup", function(e) {
+      if (textArea.innerText.length) {
+        textArea.classList.remove("chat__textarea--placeholder");
+      } else {
+        textArea.classList.add("chat__textarea--placeholder");
+        textArea.focus();
+      }
+    });
+
+    textArea.addEventListener("keypress", function(e) {
+      if (textArea.innerText.length > defaultConfig.maxCharsResponse) {
+        if (!hasSeenMaxCharResponse) {
+          generateNext(defaultConfig.maxCharsResponseText);
+          hasSeenMaxCharResponse = true;
+        }
+      }
+    });
+
+    textArea.addEventListener("keydown", function(e) {
+      if (e.keyCode === 13) { //ENTER KEY
+        if (textArea.innerText.length) {
+          textArea.setAttribute("contentEditable", false);
+          textArea.classList.remove("chat__textarea");
+          textArea.classList.add("chat__textarea--finished");
+
+          var textAreaCopy = textArea.cloneNode(true);
+          textAreaCopy.classList.remove("chat__textarea--finished");
+          textAreaCopy.classList.add("chat__answer");
+
+          animateResponse(textArea, textAreaCopy, function(n) {
+            send({
+              text: textArea.innerHTML,
+              type: "answer"
+            });
+
+            generateNext(chatBlocks[chatBlock.next]);
+          });
+        }
+      }
+    });
+  }
+
+  function animateResponse(element, elementCopy, callback) {
+
+    addAnswerElement(elementCopy);
+
+    var a = getAbsoluteRect(elementCopy);
+    var o = getAbsoluteRect(element);
+    var r = a.x - o.x;
+    var c = a.y - o.y;
+
+    element.style.transform = "translate3d(" + r + "px, " + c + "px, 0)";
+    elementCopy.style.opacity = 0;
+
+    element.addEventListener("transitionend", function() {
+      callback();
+      element.parentNode.innerHTML = "";
+      elementCopy.style.opacity = 1;
+    });
+
+    var responses = [].slice.call(element.parentNode.children);
+    responses.forEach(function(t) {
+      if (t !== element) {
+        t.style.transform = "translate3d(0, 200px, 0)";
+      }
+    });
+  }
+
+  function createAnswerButton(chatBlock, delay) {
+
+    var button = document.createElement("div");
+    button.innerHTML = chatBlock.text.toUpperCase(); //TODO
+    button.next = chatBlock.next;
+    button.setAttribute("class", "chat__block chat__answer--button");
+    button.style.transform = "translate3d(0, 200px, 0)";
+
+    setTimeout(function() {
+      button.style.transform = "translate3d(0, 0, 0)";
+    }, 200 + delay);
+
+    return button;
+  }
+
+  function endChat() {
+
+    var currentChat = JSON.parse(localStorage.getItem("currentChat"));
+    currentChat.completed = true;
+    localStorage.setItem("currentChat", JSON.stringify(currentChat));
   }
 
   function send(chatBlock) {
 
+    var currentChat = JSON.parse(localStorage.getItem("currentChat"));
     currentChat.log.push(chatBlock);
-
-    ///TODO
-    // $.ajax({
-    //   url: '/consultation/' + currentChat.id,
-    //   type: 'PUT',
-    //   contentType: 'application/json',
-    //   data: JSON.stringify(currentChat),
-    //   success: function(data) {
-    //     currentChat = data;
-    //   }
-    // });
+    localStorage.setItem("currentChat", JSON.stringify(currentChat));
   }
 
-
-
-  function getAbsoluteRect(e) {
-    var t = e.getBoundingClientRect(),
-      n = t.top + window.pageYOffset,
-      s = t.left + window.pageXOffset;
+  function getAbsoluteRect(element) {
+    var rect = element.getBoundingClientRect();
+    var n = rect.top + window.pageYOffset;
+    var s = rect.left + window.pageXOffset;
     return {
       x: s,
       y: n
     };
   }
 
-  function scrollInto() {
-
+  function scrollIntoView() {
     var rect = chatHost.getBoundingClientRect();
     var difference = rect.bottom - window.innerHeight;
     var scrollNode = document.querySelector(defaultConfig.scrollNode);
@@ -408,94 +529,46 @@ var chatModule = (function($, F, chatBlocks) {
     a();
   }
 
-  function recreateDom() {
-    //TODO
-  }
-
-  function log(message) {
-    $(defaultConfig.targetNode).html(message);
-  }
-
   return {
     startNew: function() {
-      log("startNew");
+
       initDom();
+
       var fingerprint = new F().get();
 
-      // mock
-      var newChat = {
-        clientId: fingerprint,
-        log: [],
-        completed: false
-      };
-
       currentChat = {
-        client_id: 1951436250,
+        client_id: fingerprint,
         completed: false,
-        created_at: "2017-03-02 12:18:08",
-        id: 6,
+        id: 1,
         log: [],
         sent_email: false,
-        updated_at: "2017-03-02 12:18:08"
       };
 
-      generateNext(chatBlocks.q1);
-      //
+      localStorage.setItem("currentChat", JSON.stringify(currentChat));
 
-      //TODO MOCK
-      // $.ajax({
-      //   url: 'http://localhost:8000/consultation',
-      //   type: 'POST',
-      //   contentType: 'application/json',
-      //   data: JSON.stringify(newConsultation),
-      //   success: function(data) {
-      //     currentConsultation = data;
-      //     // t.say(t.messages.q1);
-      //   }
-      // });
+      generateNext(chatBlocks.q1);
     },
 
     continueLatest: function() {
-      log("continueLatest");
+
       initDom();
 
-      var fingerprint = new F().get();
+      var currentChat;
 
-      // mock
-      currentChat = {
-        client_id: 1951436250,
-        completed: false,
-        created_at: "2017-03-02 12:18:08",
-        id: 6,
-        log: [],
-        sent_email: false,
-        updated_at: "2017-03-02 12:18:08"
-      };
+      if (localStorage.currentChat) {
 
-      if (currentChat.log.length > 0) {
-        recreateDom(currentChat.log);
+        currentChat = JSON.parse(localStorage.getItem("currentChat"));
+
+        if (currentChat.log.length > 0) {
+          recreateLatestChat(currentChat.log);
+        } else {
+          this.startNew();
+        }
+
       } else {
+
         this.startNew();
       }
-      //
-
-      // TODO MOCK
-      // $.ajax({
-      //   url: "/consultation/" + fingerprint,
-      //   type: "GET",
-      //   success: function(data) {
-      //     if (data) {
-      //       currentConsultation = data;
-      //       if (currentConsultation.log.length > 0) {
-      //         recreateDom(currentConsultation.log);
-      //       } else {
-      //         startNew();
-      //       }
-      //     } else {
-      //       startNew();
-      //     }
-      //   }
-      // });
     }
   };
 })(jQuery, Fingerprint, chatBlocks);
