@@ -1,6 +1,6 @@
 body {
     color: #0194CA;
-    font-size: 14px;
+    font-size: 12px;
     background-color: black;
     font-family: 'robotoregular', Helvetica, Arial, sans-serif;
 }
@@ -17,22 +17,36 @@ dir {
     -webkit-padding-start: 40px;
 }
 
-.chat-container {}
+#chat-container {
+    padding-top: 100px;
+    font-family: 'robotolight', Helvetica, Arial, sans-serif;
+    font-size: 1.1em;
+}
 
 .chat {
     position: relative;
     padding-bottom: 15em;
     overflow: hidden;
     margin: 0 auto;
-    max-width: 700px;
+    max-width: 600px;
 }
 
 .chat__restart--button {
-    text-align: center;
-    color: red;
+    line-height: 1.45em;
+    text-align: left;
+    padding: 6px 12px;
+    margin: 6px 12px;
+    display: inline-block;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    border-color: #fbb615;
+    cursor: pointer;
+    float: right;
+    color: #fbb615;
 }
 
 .chat__list {
+    clear: right;
     list-style: none;
     padding: 0;
     margin: 0 0 0 0;
@@ -82,7 +96,7 @@ dir {
 
 .chat__answer--button--clicked {
     margin: 6px 6px;
-    transition: transform 0.3s;
+    transition: transform 0.5s;
     display: inline-block;
     cursor: pointer;
     float: none;
@@ -90,7 +104,7 @@ dir {
 }
 
 .chat__answer {
-    transition: transform 0.3s;
+    transition: transform 0.5s;
     float: right;
     color: #fbb615;
 }
@@ -102,15 +116,16 @@ dir {
 }
 
 .chat__textarea {
-    -moz-appearance: textfield-multiline;
-    -webkit-appearance: textarea;
+    /*-moz-appearance: textfield-multiline;*/
+    /*-webkit-appearance: textarea;*/
     height: 75px;
     overflow: auto;
     padding: 2px;
     float: none;
     cursor: text;
+    border: 1px solid transparent;
+    border-color: #fbb615;
     border-radius: 3px;
-    border: 1px solid;
     margin: 12px 12px;
     transition: transform 0.3s;
     color: #fbb615;
@@ -118,15 +133,15 @@ dir {
 }
 
 .chat__textarea--finished {
-    -moz-appearance: textfield-multiline;
-    -webkit-appearance: textarea;
+    /*-moz-appearance: textfield-multiline;*/
+    /*-webkit-appearance: textarea;*/
     height: 75px;
     overflow: auto;
     padding: 2px;
     float: none;
     cursor: text;
     margin: 12px 12px;
-    transition: transform 0.3s;
+    transition: transform 0.5s;
     color: #fbb615;
     outline: 0px solid transparent;
 }

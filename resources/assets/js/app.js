@@ -127,31 +127,58 @@ var chatBlocks = {
 
 var chatModule = (function($, F, chatBlocks) {
 
-  var defaultConfig,
-    chatList,
-    chatAnswers,
-    chatHost,
-    hasSeenMaxCharResponse = false;
+  var currentChat;
+  var chatList;
+  var chatAnswers;
+  var chatHost;
+  var hasSeenMaxCharResponse = false;
 
-  defaultConfig = {
-    targetNode: "div#chatbot",
+  var defaultConfig = {
+    targetNode: "chatbot",
     scrollNode: "body",
-    maxCharsResponse: 500, //TODO
+    maxCharsResponse: 500,
     maxCharsResponseText: {
       type: "warning",
       text: "Let's keep it casual... no need for long messages. :)"
     },
     cursor: "<span class=\"blink\">_</span>",
-    chatDelay: 1050,
-    typingSpeed: 18
+    chatDelay: 1000,
+
+    typingSpeed: 15
   };
 
+  function startNew() {
+
+    initDom();
+    var fingerprint = new F().get();
+
+    currentChat = {
+      client_id: fingerprint,
+      completed: false,
+      id: 1,
+      log: [],
+      sent_email: false,
+    };
+
+    localStorage.setItem("currentChat", JSON.stringify(currentChat));
+
+    generateNext(chatBlocks.q1);
+  }
+
   function initDom() {
+
+    var chatRestart = document.createElement("div");
+    chatRestart.innerHTML = "RESTART";
+    chatRestart.setAttribute("class", "chat__restart--button");
+    chatRestart.addEventListener("click", function(i) {
+      startNew();
+    });
+
     chatList = document.createElement("ul");
     chatList.className = "chat__list";
     chatAnswers = document.createElement("div");
     chatAnswers.className = "chat__responses";
-    chatHost = document.querySelector(defaultConfig.targetNode);
+    chatHost = document.getElementById(defaultConfig.targetNode);
 
     if (!chatHost) {
       console.warn("Host element not found.");
@@ -162,6 +189,7 @@ var chatModule = (function($, F, chatBlocks) {
     }
 
     chatHost.classList.add("chat");
+    chatHost.appendChild(chatRestart);
     chatHost.appendChild(chatList);
     chatHost.appendChild(chatAnswers);
   }
@@ -296,8 +324,8 @@ var chatModule = (function($, F, chatBlocks) {
         next: next
       });
 
-      typingSpeed = defaultConfig.typingSpeed;
-      typingDelay = text * typingSpeed;
+      var typingSpeed = defaultConfig.typingSpeed;
+      var typingDelay = text * typingSpeed;
 
       setTimeout(function() {
         setTimeout(function() {
@@ -385,7 +413,7 @@ var chatModule = (function($, F, chatBlocks) {
   function writeAnswer(chatBlock) {
 
     var textArea = document.createElement("div");
-    textArea.next = chatBlock.next; //TODO
+    textArea.next = chatBlock.next;
     textArea.setAttribute("class", "chat__block");
     textArea.style.transform = "translate3d(0, 200px, 0)";
 
@@ -407,15 +435,12 @@ var chatModule = (function($, F, chatBlocks) {
     });
 
     textArea.addEventListener("keyup", function(e) {
-      if (textArea.innerText.length) {
+      if (textArea.innerText.length > 0 && textArea.innerHTML !== "<br>") {
         textArea.classList.remove("chat__textarea--placeholder");
       } else {
         textArea.classList.add("chat__textarea--placeholder");
         textArea.focus();
       }
-    });
-
-    textArea.addEventListener("keypress", function(e) {
       if (textArea.innerText.length > defaultConfig.maxCharsResponse) {
         if (!hasSeenMaxCharResponse) {
           generateNext(defaultConfig.maxCharsResponseText);
@@ -425,8 +450,8 @@ var chatModule = (function($, F, chatBlocks) {
     });
 
     textArea.addEventListener("keydown", function(e) {
-      if (e.keyCode === 13) { //ENTER KEY
-        if (textArea.innerText.length) {
+      if (textArea.innerText.length > 0 && textArea.innerHTML !== "<br>") {
+        if (e.keyCode === 13) { //ENTER KEY
           textArea.setAttribute("contentEditable", false);
           textArea.classList.remove("chat__textarea");
           textArea.classList.add("chat__textarea--finished");
@@ -530,44 +555,20 @@ var chatModule = (function($, F, chatBlocks) {
   }
 
   return {
-    startNew: function() {
-
-      initDom();
-
-      var fingerprint = new F().get();
-
-      currentChat = {
-        client_id: fingerprint,
-        completed: false,
-        id: 1,
-        log: [],
-        sent_email: false,
-      };
-
-      localStorage.setItem("currentChat", JSON.stringify(currentChat));
-
-      generateNext(chatBlocks.q1);
-    },
-
     continueLatest: function() {
-
       initDom();
-
       var currentChat;
 
       if (localStorage.currentChat) {
-
         currentChat = JSON.parse(localStorage.getItem("currentChat"));
 
         if (currentChat.log.length > 0) {
           recreateLatestChat(currentChat.log);
         } else {
-          this.startNew();
+          startNew();
         }
-
       } else {
-
-        this.startNew();
+        startNew();
       }
     }
   };

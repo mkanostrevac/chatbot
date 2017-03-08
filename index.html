@@ -8,8 +8,7 @@
 </head>
 
 <body>
-    <div class="chat-container">
-        <div id="restart" class="chat__restart--button"> Restart </div>
+    <div id="chat-container">
         <div id="chatbot">
         </div>
     </div>
@@ -19,16 +18,11 @@
     <script type="text/javascript" src="resources/assets/js/app.js"></script>
     
     <script type="text/javascript">
- 		setTimeout(function() {
-
-            var restart = document.getElementById("restart");
-            restart.addEventListener("click", function(i) {
-                chatModule.startNew();
-            });
-
+        setTimeout(function() {
             chatModule.continueLatest();
         }, 200);
     </script>
+
 </body>
 
 </html>
