@@ -544,7 +544,7 @@ var chatModule = (function($, F, chatBlocks) {
 
     $('html,body').animate({
       scrollTop: rect.bottom
-    }, 500);
+    }, 300);
   }
 
   return {
