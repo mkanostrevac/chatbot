@@ -135,7 +135,6 @@ var chatModule = (function($, F, chatBlocks) {
 
   var defaultConfig = {
     targetNode: "chatbot",
-    scrollNode: "body",
     maxCharsResponse: 500,
     maxCharsResponseText: {
       type: "warning",
@@ -220,6 +219,8 @@ var chatModule = (function($, F, chatBlocks) {
         }
       }, delay);
     });
+
+    scrollIntoView();
 
     if (next && next !== "end") {
       generateNext(chatBlocks[next]);
@@ -309,9 +310,9 @@ var chatModule = (function($, F, chatBlocks) {
     container.appendChild(element);
     chatList.appendChild(container);
 
-    scrollIntoView();
-
     if (!recreatingLatestChat) {
+
+      scrollIntoView();
       element.classList.add("chat__question--slideIn");
 
       var text = element.innerHTML;
@@ -335,8 +336,6 @@ var chatModule = (function($, F, chatBlocks) {
             c: 0,
             element: element
           });
-
-          scrollIntoView();
 
         }, defaultConfig.chatDelay);
       }, typingDelay);
@@ -389,6 +388,8 @@ var chatModule = (function($, F, chatBlocks) {
 
     buttons.forEach(function(button, index) {
       chatAnswers.appendChild(button);
+      scrollIntoView();
+
       button.addEventListener("click", function() {
 
         button.classList.remove("chat__answer--button");
@@ -540,18 +541,10 @@ var chatModule = (function($, F, chatBlocks) {
 
   function scrollIntoView() {
     var rect = chatHost.getBoundingClientRect();
-    var difference = rect.bottom - window.innerHeight;
-    var scrollNode = document.querySelector(defaultConfig.scrollNode);
 
-    function a() {
-      if (difference > 0) {
-        scrollNode.scrollTop = scrollNode.scrollTop + 8;
-        difference -= 8;
-        window.requestAnimationFrame(a);
-      }
-    }
-
-    a();
+    $('html,body').animate({
+      scrollTop: rect.bottom
+    }, 500);
   }
 
   return {
