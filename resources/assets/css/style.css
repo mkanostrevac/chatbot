@@ -110,14 +110,12 @@ dir {
 }
 
 .chat__textarea--placeholder:before {
-    content: 'Type and hit RETURN...';
+    content: attr(placeholder);
     display: inline-block;
     opacity: 0.5;
 }
 
 .chat__textarea {
-    /*-moz-appearance: textfield-multiline;*/
-    /*-webkit-appearance: textarea;*/
     height: 75px;
     overflow: auto;
     padding: 2px;
@@ -133,8 +131,6 @@ dir {
 }
 
 .chat__textarea--finished {
-    /*-moz-appearance: textfield-multiline;*/
-    /*-webkit-appearance: textarea;*/
     height: 75px;
     overflow: auto;
     padding: 2px;

@@ -425,8 +425,9 @@ var chatModule = (function($, F, chatBlocks) {
     chatAnswers.appendChild(textArea);
 
     textArea.classList.add("chat__textarea");
+    textArea.setAttribute("contenteditable", true);
+    textArea.setAttribute("placeholder", "Type and hit RETURN...");
     textArea.classList.add("chat__textarea--placeholder");
-    textArea.setAttribute("contentEditable", true);
 
     textArea.addEventListener("paste", function(e) {
       requestAnimationFrame(function() {
@@ -452,8 +453,8 @@ var chatModule = (function($, F, chatBlocks) {
 
     textArea.addEventListener("keydown", function(e) {
       if (textArea.innerText.length > 0 && textArea.innerHTML !== "<br>") {
-        if (e.keyCode === 13) { //ENTER KEY
-          textArea.setAttribute("contentEditable", false);
+        if (e.keyCode === 13) {
+          textArea.setAttribute("contenteditable", false);
           textArea.classList.remove("chat__textarea");
           textArea.classList.add("chat__textarea--finished");
 
