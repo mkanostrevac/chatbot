@@ -107,6 +107,8 @@ dir {
     transition: transform 0.5s;
     float: right;
     color: #fbb615;
+    max-width: 75%;
+    text-align: right;
 }
 
 .chat__textarea--placeholder:before {
@@ -140,4 +142,6 @@ dir {
     transition: transform 0.5s;
     color: #fbb615;
     outline: 0px solid transparent;
+    max-width: 75%;
+    text-align: right;
 }
