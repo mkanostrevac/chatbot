@@ -1,12 +1,12 @@
 var chatBlocks = {
   'q1': {
     type: 'question',
-    text: 'Hello!',
+    text: 'Ciao!',
     next: 'q2'
   },
   'q2': {
     type: 'question',
-    text: 'Welcome to our awesome website!',
+    text: 'Welcome to our website!',
     next: 'q3'
   },
   'q3': {
